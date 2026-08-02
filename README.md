@@ -1,50 +1,44 @@
-# Task Manager REST API
+# 📋 Task Manager REST API
 
-A RESTful Task Management API developed using **Node.js** and **Express.js**. The application demonstrates CRUD operations, middleware implementation, request validation, and centralized error handling using an in-memory data store.
+A RESTful Task Management API built using **Node.js** and **Express.js** as part of the **Advanced Web Development Frameworks (AWDF)** laboratory.
 
----
-
-## Features
-
-- Create Task
-- Read All Tasks
-- Update Existing Task
-- Delete Task
-- Request Logging Middleware
-- JSON Content-Type Validation
-- Task ID Validation Middleware
-- Global Error Handler
-- Custom 404 Handler
-- Proper HTTP Status Codes
+The API demonstrates CRUD operations, middleware implementation, request validation, centralized error handling, and RESTful API design principles.
 
 ---
 
-## Technologies Used
+## 📌 Features
+
+- ➕ Create Task
+- 📄 Get All Tasks
+- ✏️ Update Task
+- ❌ Delete Task
+- 📝 Request Logging Middleware
+- 📦 JSON Content-Type Validation
+- 🆔 Route Parameter Validation
+- ⚠️ Global Error Handler
+- 🚫 Custom 404 Handler
+- 📡 RESTful CRUD API
+
+---
+
+## 🛠️ Technologies Used
 
 - Node.js
 - Express.js
-- JavaScript (ES6+)
+- JavaScript
 - Postman
+- Git & GitHub
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 task-manager-api-D25IT125/
 │
 ├── controllers/
-│   └── taskController.js
-│
 ├── middleware/
-│   ├── logger.js
-│   ├── errorHandler.js
-│   ├── validateContentType.js
-│   └── validateTaskId.js
-│
 ├── routes/
-│   └── taskRoutes.js
-│
 ├── server.js
 ├── package.json
 ├── package-lock.json
@@ -54,33 +48,33 @@ task-manager-api-D25IT125/
 
 ---
 
-## Installation
+## 🚀 Installation
 
-Clone the repository:
+Clone the repository
 
 ```bash
 git clone https://github.com/HetGangani/task-manager-api-D25IT125.git
 ```
 
-Navigate to the project directory:
+Navigate to the project
 
 ```bash
 cd task-manager-api-D25IT125
 ```
 
-Install dependencies:
+Install dependencies
 
 ```bash
 npm install
 ```
 
-Run the server:
+Start the server
 
 ```bash
 npm run dev
 ```
 
-The server will start at:
+Server URL
 
 ```
 http://localhost:5000
@@ -88,136 +82,97 @@ http://localhost:5000
 
 ---
 
-## API Endpoints
+# 📡 API Endpoints
 
-### Get All Tasks
-
-```
-GET /tasks
-```
-
----
-
-### Create Task
-
-```
-POST /tasks
-```
-
-Sample Request
-
-```json
-{
-    "title": "Complete AWDF Practical"
-}
-```
+| Method | Endpoint | Description |
+|----------|----------|-------------|
+| GET | `/tasks` | Get all tasks |
+| POST | `/tasks` | Create a task |
+| PUT | `/tasks/:id` | Update a task |
+| DELETE | `/tasks/:id` | Delete a task |
 
 ---
 
-### Update Task
+# 📷 Screenshots
 
-```
-PUT /tasks/:id
-```
+## 🚀 Server Running
 
-Sample Request
+<img width="732" height="317" alt="Screenshot 2026-08-02 181003" src="https://github.com/user-attachments/assets/00f22fdf-f75c-4617-8f3a-badc0c4f334b" />
 
-```json
-{
-    "completed": true
-}
-```
 
 ---
 
-### Delete Task
+## 📄 GET Request
 
-```
-DELETE /tasks/:id
-```
+<img width="1097" height="307" alt="Screenshot 2026-08-02 181150" src="https://github.com/user-attachments/assets/8ab2bbe3-fda5-469e-9a6c-2a837758148b" />
 
----
-
-## Middleware
-
-### Logger Middleware
-
-Logs:
-
-- HTTP Method
-- Request URL
-- Timestamp
 
 ---
 
-### Content-Type Validation
+## ➕ POST Request
 
-Rejects POST and PUT requests without:
+<img width="1097" height="535" alt="Screenshot 2026-08-02 181240" src="https://github.com/user-attachments/assets/62f83fa7-3ff8-48ff-af8a-45488cbf71b9" />
+<img width="1093" height="477" alt="Screenshot 2026-08-02 181300" src="https://github.com/user-attachments/assets/289e3e81-5c0e-4054-9c6e-c329d3c6e029" />
 
-```
-Content-Type: application/json
-```
 
 ---
 
-### Task ID Validation
+## ✏️ PUT Request
 
-Validates the task ID before update and delete operations.
+<img width="1097" height="522" alt="Screenshot 2026-08-02 181355" src="https://github.com/user-attachments/assets/397ca679-06ce-42aa-9aa2-d6bf57d9619a" />
 
----
-
-### Global Error Handler
-
-Returns a structured JSON response for server errors.
 
 ---
 
-### Custom 404 Handler
+## ❌ DELETE Request
 
-Returns a JSON response for undefined routes.
+<img width="1096" height="402" alt="Screenshot 2026-08-02 181427" src="https://github.com/user-attachments/assets/ab231c5d-dad3-4203-a4a1-f841cde82d91" />
+<img width="1092" height="295" alt="Screenshot 2026-08-02 181456" src="https://github.com/user-attachments/assets/f64fc473-c42e-4617-ae85-dccc55d10fb4" />
 
----
-
-## HTTP Status Codes
-
-| Status Code | Description |
-|-------------|-------------|
-| 200 | Success |
-| 201 | Resource Created |
-| 400 | Bad Request |
-| 404 | Resource Not Found |
-| 500 | Internal Server Error |
 
 ---
 
-## Testing
+## 📝 Logger Middleware
 
-The API was tested using **Postman**.
+<img width="697" height="412" alt="Screenshot 2026-08-02 181512" src="https://github.com/user-attachments/assets/aaba401e-7c48-495e-8804-30395f249618" />
 
-Tested Operations:
-
-- GET
-- POST
-- PUT
-- DELETE
-- Invalid Route
-- Invalid Task ID
-- Missing Content-Type
 
 ---
 
-## Future Improvements
+## 📦 Content-Type Validation
+
+<img width="1097" height="392" alt="Screenshot 2026-08-02 181557" src="https://github.com/user-attachments/assets/e111b21d-9c22-41fb-99b1-33fc354195d8" />
+
+
+---
+
+## 🆔 Invalid Task ID
+
+<img width="1095" height="367" alt="Screenshot 2026-08-02 181748" src="https://github.com/user-attachments/assets/14331858-bdb4-4428-adb1-0557a339ddcc" />
+
+
+---
+
+## 🚫 Custom 404 Response
+
+<img width="1097" height="353" alt="Screenshot 2026-08-02 181827" src="https://github.com/user-attachments/assets/4a153cae-8096-43cd-98f1-a7985675bcda" />
+
+
+---
+
+## ✨ Future Improvements
 
 - MongoDB Integration
-- JWT Authentication
-- User Management
-- Persistent Database
-- Pagination
+- User Authentication
+- JWT Authorization
 - Task Categories
+- Pagination
+- Search & Filtering
+- Docker Deployment
 
 ---
 
-## Author
+## 👨‍💻 Author
 
 **Het Gangani**
 
