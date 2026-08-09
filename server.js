@@ -1,4 +1,6 @@
 const express = require('express');
+const mongoose = require('mongoose');
+require("dotenv").config();
 
 const taskRoutes = require('./routes/taskRoutes');
 const logger = require('./middleware/logger');
@@ -23,6 +25,13 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+mongoose.connect(process.env.MONGO_URI).then(() => {
+    console.log('Connected to MongoDB');
+
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+})
+.catch((err) => {
+    console.error('Failed to connect to MongoDB', err.message);
 });
