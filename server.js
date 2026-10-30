@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 require("dotenv").config();
 const cors = require("cors");
 
+// Register event listeners exactly once during application startup
+const { registerEventListeners } = require('./events/listeners');
+registerEventListeners();
+
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
 const logger = require('./middleware/logger');

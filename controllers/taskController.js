@@ -1,5 +1,6 @@
 const Task = require("../models/Task");
 const cache = require("../utils/cache");
+const taskEvents = require("../events/events");
 
 const getAllTasks = async (req, res, next) => {
     try {
@@ -32,10 +33,25 @@ const createTask = async (req, res, next) => {
         // Invalidate all_tasks cache on successful creation
         cache.del("all_tasks");
 
+        // 1. Capture the API response timestamp
+        const apiResponseTimestamp = new Date().toISOString();
+
+        // 2. Send the existing HTTP 201 JSON response
         res.status(201).json({
             success: true,
             message: "Task created successfully",
             task: newTask
+        });
+
+        // 4. Log timestamps demonstrating API response was sent before notification processing completed
+        console.log(`[HTTP 201 SENT] [${apiResponseTimestamp}] Response delivered for Task ID: ${newTask._id}`);
+
+        // 3. Emit task-created with created task and authenticated user information
+        taskEvents.emit("task-created", {
+            task: newTask,
+            user: req.user,
+            apiResponseTimestamp,
+            simulateError: req.body.simulateNotificationError || false
         });
 
     } catch (err) {
@@ -125,10 +141,24 @@ const deleteTask = async (req, res, next) => {
         cache.del("all_tasks");
         cache.del(`task_${req.params.id}`);
 
+        // 1. Capture the deletion timestamp
+        const deletionTimestamp = new Date().toISOString();
+
+        // 2. Send the existing HTTP 200 response
         res.status(200).json({
             success: true,
             message: "Task deleted successfully..."
         });
+
+        console.log(`[HTTP 200 SENT] [${deletionTimestamp}] Deletion response delivered for Task ID: ${req.params.id}`);
+
+        // 3. Emit task-deleted with deleted task and authenticated user information
+        taskEvents.emit("task-deleted", {
+            task,
+            user: req.user,
+            deletionTimestamp
+        });
+
     } catch (err) {
         next(err);
     }
