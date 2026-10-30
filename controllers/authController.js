@@ -35,9 +35,11 @@ const register = async (req, res, next) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Ensure newly registered users always have default role "user"
         const user = await User.create({
             email: normalizedEmail,
-            password: hashedPassword
+            password: hashedPassword,
+            role: "user"
         });
 
         return res.status(201).json({
@@ -45,7 +47,8 @@ const register = async (req, res, next) => {
             message: "User registered successfully.",
             user: {
                 id: user._id,
-                email: user.email
+                email: user.email,
+                role: user.role || "user"
             }
         });
 
@@ -92,9 +95,12 @@ const login = async (req, res, next) => {
             });
         }
 
+        const role = user.role || "user";
+
         const token = jwt.sign(
             {
-                id: user._id
+                id: user._id,
+                role
             },
             process.env.JWT_SECRET,
             {
@@ -108,7 +114,8 @@ const login = async (req, res, next) => {
             token,
             user: {
                 id: user._id,
-                email: user.email
+                email: user.email,
+                role
             }
         });
 
@@ -132,7 +139,8 @@ const getMe = async (req, res, next) => {
             success: true,
             user: {
                 id: user._id,
-                email: user.email
+                email: user.email,
+                role: user.role || "user"
             }
         });
     } catch (error) {
