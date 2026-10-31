@@ -410,3 +410,223 @@ Subsequent HTTP requests continued to process normally, verifying complete isola
 B.Tech Information Technology
 
 CHARUSAT
+
+
+---
+
+## Practical 11 – Docker Compose Containerization
+
+### 🎯 Objective
+To containerize both the frontend and backend applications alongside a MongoDB database service using Docker and Docker Compose. This establishes an isolated, multi-tier microservices architecture with unified service orchestration, reproducible builds across operating systems, secure network isolation, and persistent volume storage.
+
+---
+
+### 🧩 Architecture Overview
+
+The multi-container stack consists of three coordinated services connected via a dedicated Docker bridge network (`app-network`):
+
+```mermaid
+flowchart TD
+    subgraph Host["Host Machine"]
+        Browser["Web Browser (User Client)"]
+        AdminCLI["PowerShell / CLI"]
+    end
+
+    subgraph DockerBridge["Docker Network: app-network (Bridge)"]
+        subgraph FrontendContainer["student-portfolio-frontend (Nginx Alpine)"]
+            Nginx["Nginx Web Server\n(Port 80)"]
+            ReactAssets["React Production Build\n(/usr/share/nginx/html)"]
+        end
+
+        subgraph BackendContainer["task-manager-backend (Node 20 Alpine)"]
+            ExpressApp["Express API Server\n(Port 5000)"]
+            EventEmitter["TaskEvents (Node events)"]
+            NodeCache["Node-Cache (In-Memory)"]
+        end
+
+        subgraph MongoContainer["task-manager-mongodb (Mongo 7)"]
+            MongoEngine["MongoDB Daemon\n(Port 27017)"]
+        end
+    end
+
+    subgraph Storage["Persistent Host Storage"]
+        NamedVol[("Named Volume: mongo-data\n(/data/db)")]
+    end
+
+    Browser -- "HTTP Requests (Port 5174)" --> Nginx
+    Browser -- "REST API Calls (Port 5001)" --> ExpressApp
+    AdminCLI -- "Health Check: GET /health (Port 5001)" --> ExpressApp
+    ExpressApp -- "Internal DNS: mongodb:27017" --> MongoEngine
+    MongoEngine <--> NamedVol
+```
+
+#### Core Components:
+1. **React Frontend (`frontend`):**
+   - **Multi-Stage Docker Build:**
+     - *Build Stage (`node:20-alpine`):* Installs dependencies via `npm ci` and compiles static production assets using `npm run build` with `VITE_API_URL=http://localhost:5001`.
+     - *Production Stage (`nginx:alpine`):* Copies compiled assets to `/usr/share/nginx/html` and serves them through high-performance Nginx on container port `80`.
+     - *SPA Routing:* Configured with custom `nginx.conf` (`try_files $uri $uri/ /index.html;`) to support client-side React Router navigation without 404 errors on browser refresh.
+2. **Node.js/Express Backend (`backend`):**
+   - Built on lightweight `node:20-alpine` and listens on container port `5000`.
+   - Incorporates all previous features: JWT authentication, RBAC authorization, in-memory caching (`node-cache`), asynchronous event processing (`EventEmitter`), and the `GET /health` diagnostic endpoint.
+3. **MongoDB Database (`mongodb`):**
+   - Official `mongo:7` image listening on default internal container port `27017`.
+   - Accessible internally by backend containers through the Docker Compose service DNS name `mongodb`.
+4. **Dedicated Bridge Network (`app-network`):**
+   - Provides private, isolated software-defined DNS resolution and inter-container routing.
+5. **Named Volume (`mongo-data`):**
+   - Mounts to `/data/db` inside the MongoDB container to guarantee zero data loss across container lifecycles.
+
+---
+
+### 📁 Repository Structure
+
+The frontend and backend projects reside as sibling directories within the root workspace:
+
+```text
+React-workspace/
+├── task-manager-api/
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   └── ...
+└── student-portfolio/
+    ├── Dockerfile
+    ├── nginx.conf
+    └── ...
+```
+
+---
+
+### 🚀 Setup & Deployment Instructions
+
+#### 1. Clone Repositories as Sibling Folders
+Run the following commands in PowerShell from your workspace root:
+
+```powershell
+git clone https://github.com/HetGangani/task-manager-api-D25IT125.git task-manager-api
+git clone https://github.com/HetGangani/portfolio-D25IT125.git student-portfolio
+cd task-manager-api
+Copy-Item .env.example .env
+```
+
+> [!IMPORTANT]
+> **Environment Variable Configuration:**
+> Open `.env` and configure a private, secure string for `JWT_SECRET`. Never commit an actual secret or production key to version control. The MongoDB connection URI is configured for Docker Compose as `mongodb://mongodb:27017/task_manager`.
+
+#### 2. Build and Launch Containers
+From the `task-manager-api` directory:
+
+```powershell
+docker compose config
+docker compose build
+docker compose up -d
+docker compose ps
+Invoke-RestMethod http://localhost:5001/health
+```
+
+#### Expected Output for Health Check:
+```json
+{
+  "success": true,
+  "message": "Task Manager API is running",
+  "database": "connected"
+}
+```
+
+---
+
+### 🌐 Access URLs & Service Endpoints
+
+- **Frontend:** http://localhost:5174
+- **Backend health:** http://localhost:5001/health
+
+| Service | Host URL | Container Port | Access Type | Description |
+|---|---|---|---|---|
+| **Frontend UI** | `http://localhost:5174` | `80` | Public (Browser) | Student Portfolio & Task Manager React App |
+| **Backend API** | `http://localhost:5001` | `5000` | Public (Host) | REST API endpoints (`/tasks`, `/login`, etc.) |
+| **Backend Health** | `http://localhost:5001/health` | `5000` | Public (Host) | API & MongoDB connectivity diagnostic check |
+| **MongoDB Database** | *Unpublished to Host* | `27017` | Internal (`mongodb`) | Private database accessible only within `app-network` |
+
+---
+
+### 🔌 Communication Architecture: Browser vs. Inter-Container
+
+A critical networking distinction exists between client-side browser communication and container-to-container backend communication:
+
+1. **Frontend Browser to Backend (`http://localhost:5001`):**
+   - The React frontend application executes client-side inside the user's **web browser** on the host machine.
+   - Even though the static files (`HTML`, `JS`, `CSS`) are served from the Nginx container on port `5174`, API requests originate from the host browser runtime.
+   - Therefore, the browser must send API requests to the host-published backend port: `http://localhost:5001`.
+2. **Backend to MongoDB (`mongodb://mongodb:27017/task_manager`):**
+   - The Express backend process executes **inside** its Docker container.
+   - Within the Docker Compose bridge network (`app-network`), Docker's embedded DNS server automatically resolves the service hostname `mongodb` to the database container's internal IP address.
+   - The backend connects directly using `mongodb://mongodb:27017/task_manager`.
+
+---
+
+### 💡 Key Docker Concepts Explained
+
+#### 1. `EXPOSE` vs. Compose `ports`
+* **`EXPOSE` (Dockerfile instruction):**
+  - Acts as documentation and metadata declaring which port the process inside the container intends to listen on (e.g., `EXPOSE 5000` in backend, `EXPOSE 80` in frontend Nginx).
+  - It does **not** publish or bind the port to the host machine interface.
+* **`ports` (Docker Compose configuration):**
+  - Actively creates a port mapping rule from host interface to container port (format: `HOST:CONTAINER`, e.g., `"5001:5000"`, `"5174:80"`).
+  - Enables incoming host traffic to reach the containerized service.
+  - Services that should remain internal (such as `mongodb` on port `27017`) omit `ports` mapping to prevent external exposure and ensure network security.
+
+#### 2. Why `localhost` Cannot Be Used for Inter-Container Communication
+* Each container maintains its own isolated network namespace, loopback interface, and IP stack (`127.0.0.1` / `localhost`).
+* If the backend container attempts to connect to `mongodb://localhost:27017`, it queries its *own* local loopback interface rather than the database container, causing an immediate connection refusal (`ECONNREFUSED`).
+* Containers on the shared `app-network` bridge communicate using Docker's internal DNS resolver via their Compose service hostnames (`mongodb`, `backend`).
+
+#### 3. Why `node_modules` Is Excluded from Docker Builds (`.dockerignore`)
+* **Cross-Platform Binary Incompatibility:** Host `node_modules` may contain native compiled binary extensions compiled for the host OS (e.g., Windows x64 MSVC). Copying them into a `node:20-alpine` (Linux musl) container leads to architecture mismatch errors and runtime crashes.
+* **Build Context Overhead:** Uploading hundreds of megabytes of host dependencies across the Docker daemon socket unnecessarily inflates build context transfer time.
+* **Build Reproducibility:** Excluding `node_modules` via `.dockerignore` guarantees that `npm ci` executes fresh inside the target container environment, generating clean and reproducible dependencies tailored for Alpine Linux.
+
+---
+
+### 💾 Data Persistence & Named Volumes
+
+Docker containers are ephemeral: terminating or replacing a container discards its internal writable layer.
+
+* **Named Volume (`mongo-data`):**
+  - Defined under top-level `volumes:` in `docker-compose.yml`.
+  - Mounted to `/data/db` within the `task-manager-mongodb` container.
+  - Managed independently by Docker on the host filesystem.
+  - When containers are stopped, removed, or recreated during updates (`docker compose down && docker compose up -d`), all database collections, user accounts, and tasks remain completely safe and persistent.
+
+#### 🛑 Stopping Containers Safely:
+To stop all running services:
+
+```powershell
+docker compose down
+```
+
+> [!CAUTION]
+> **Do not use `docker compose down -v`:**
+> The `-v` (or `--volumes`) flag instructs Docker to permanently delete all attached named volumes. Running `docker compose down -v` will permanently delete the `mongo-data` volume and erase all database records.
+
+---
+
+### 👤 Initial Account Registration & Admin Role Assignment
+
+When initializing with a fresh MongoDB volume, the database starts empty:
+
+1. **Register a User Account:**
+   - Navigate to [http://localhost:5174](http://localhost:5174) in your browser.
+   - Register a new user account (e.g., `admin@taskmanager.com`).
+   - By default, newly registered accounts receive the `user` role (enforcing least-privilege security per Practical 8/9).
+2. **Promote User to Admin:**
+   - Execute the existing role assignment script inside the running backend container:
+     ```powershell
+     docker compose exec backend node scripts/assignRole.js admin@taskmanager.com admin
+     ```
+     *(Alternatively, using direct container name:)*
+     ```powershell
+     docker exec -it task-manager-backend node scripts/assignRole.js admin@taskmanager.com admin
+     ```
+3. **Verify Admin Access:**
+   - Log out and log back in on the frontend to receive a refreshed JWT token containing `role: "admin"`.
+   - Access the **Cache Monitoring** dashboard (`/cache-monitoring`) and verify that `GET /tasks/cache/stats` responds with HTTP 200.
