@@ -21,6 +21,25 @@ app.use(validateContentType);
 app.use(logger);
 app.use(cors());
 
+// Health check endpoint (public, unauthenticated)
+app.get('/health', (req, res) => {
+    const isConnected = mongoose.connection.readyState === 1;
+
+    if (!isConnected) {
+        return res.status(503).json({
+            success: false,
+            message: "Database is disconnected",
+            database: "disconnected"
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Task Manager API is running",
+        database: "connected"
+    });
+});
+
 app.use("/tasks", taskRoutes);
 app.use('/', authRoutes);
 
